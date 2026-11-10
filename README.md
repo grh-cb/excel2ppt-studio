@@ -65,18 +65,36 @@
 
 ## 快速开始
 
+### 方式一：装包（推荐）
+
 ```powershell
-# 开发安装（Web 界面需要 web 可选依赖）
+pip install excel2ppt-studio
+
+# 图形界面：启动后自动打开浏览器
+e2p web
+```
+
+### 方式二：便携版（不需要 Python）
+
+下载 [最新 Release](https://github.com/grh-cb/excel2ppt-studio/releases/latest) 里的
+`Excel2PPT-Studio-win64.zip`，解压后双击 `Excel2PPT-Studio.exe`，浏览器会自动打开。
+
+### 方式三：开发安装
+
+```powershell
+git clone https://github.com/grh-cb/excel2ppt-studio.git
 cd excel2ppt-studio
 python -m pip install -e ".[dev,web]"
 
 # 生成示例模板与数据（3 行台账 + 单页模板）
 python examples/make_sample.py
 
-# 图形界面：启动后自动打开浏览器
 e2p web
+```
 
-# 或纯命令行：
+### 纯命令行
+
+```powershell
 e2p inspect "模板.pptx" --slide 1
 e2p suggest --excel "台账.xlsx" --template "模板.pptx" --out profile.json
 e2p build --excel "台账.xlsx" --template "模板.pptx" --profile profile.json --out "汇报.pptx"
@@ -108,10 +126,17 @@ e2p build --excel "台账.xlsx" --template "模板.pptx" --profile profile.json 
 
 ### 作为 DSH 插件
 
-仓库内 `dsh-plugin/` 是一个 DeepSeek Harness bundle：
+插件已发布到 npm（`dsh-excel2ppt-studio`），后端在 PyPI：
+
+```powershell
+pip install excel2ppt-studio
+plugin_manager install_bundle target=dsh-excel2ppt-studio
+```
+
+也可以在 Harness 的 Plugins → Discover 里添加市场索引：
 
 ```text
-plugin_manager install_bundle target=<仓库绝对路径>\dsh-plugin
+https://grh-cb.github.io/excel2ppt-studio/market-index.json
 ```
 
 安装后：
@@ -121,7 +146,7 @@ plugin_manager install_bundle target=<仓库绝对路径>\dsh-plugin
 | Host 工具 | `excel2ppt_build`（按 Profile 生成）、`excel2ppt_inspect`（看模板元素）、`excel2ppt_verify`（零漂移校验） |
 | Client 入口 | 输入框下方 `Excel2PPT` 按钮，打开本地 Studio |
 
-配置项：`pythonPath`（解释器路径）、`studioUrl`、`timeoutMs`，见 [dsh-plugin/README.md](dsh-plugin/README.md)。
+配置项：`pythonPath`（解释器路径，默认 `python`）、`studioUrl`、`timeoutMs`，见 [dsh-plugin/README.md](dsh-plugin/README.md)。
 
 ---
 
