@@ -32,9 +32,9 @@
         "en": "Generate multi-page slides from Excel rows with a zero-drift template clone; text, tables, images, charts and format verification."
       },
       "author": "一片风干叶",
-      "homepage": "https://github.com/grh-cb/excel2ppt-studio",
+      "homepage": "https://pypi.org/project/excel2ppt-studio/",
       "repository": {
-        "url": "https://github.com/grh-cb/excel2ppt-studio",
+        "url": "https://gitee.com/your-name/excel2ppt-studio",
         "directory": "dsh-plugin"
       },
       "metadata": {
@@ -52,8 +52,8 @@
       },
       "versions": [
         {
-          "version": "0.1.0",
-          "publishTimestamp": 1794192900,
+          "version": "0.1.1",
+          "publishTimestamp": 1794283941,
           "source": {
             "type": "npm"
           },
