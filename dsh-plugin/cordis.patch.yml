@@ -1,0 +1,7 @@
+- insert:
+    - id: excel2ppt
+      name: '@local/excel2ppt-studio'
+      config:
+        pythonPath: 'C:\Program Files\Python313\python.exe'
+        studioUrl: 'http://127.0.0.1:8765'
+        timeoutMs: 180000
