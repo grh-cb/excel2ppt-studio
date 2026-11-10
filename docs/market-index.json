@@ -1,0 +1,67 @@
+{
+  "format": 1,
+  "title": {
+    "zh": "Excel2PPT 插件源",
+    "en": "Excel2PPT Market"
+  },
+  "description": {
+    "zh": "办公文档自动化插件：Excel 台账按单页模板生成多页 PPT。",
+    "en": "Office document automation: generate multi-page decks from Excel with a one-slide template."
+  },
+  "metadata": {
+    "categories": {
+      "office": {
+        "title": {
+          "zh": "办公文档",
+          "en": "Office"
+        }
+      }
+    },
+    "labels": {},
+    "sortKeys": {}
+  },
+  "plugins": [
+    {
+      "name": "dsh-excel2ppt-studio",
+      "title": {
+        "zh": "Excel2PPT Studio",
+        "en": "Excel2PPT Studio"
+      },
+      "description": {
+        "zh": "用单页 PPT 模板把 Excel 台账逐行生成多页幻灯片，克隆母版页零漂移，支持文本/表格/图片/图表与格式校验。",
+        "en": "Generate multi-page slides from Excel rows with a zero-drift template clone; text, tables, images, charts and format verification."
+      },
+      "author": "一片风干叶",
+      "homepage": "https://github.com/grh-cb/excel2ppt-studio",
+      "repository": {
+        "url": "https://github.com/grh-cb/excel2ppt-studio",
+        "directory": "dsh-plugin"
+      },
+      "metadata": {
+        "category": "office",
+        "keywords": [
+          "excel",
+          "ppt",
+          "powerpoint",
+          "report",
+          "template",
+          "office"
+        ],
+        "labels": [],
+        "sortKeys": {}
+      },
+      "versions": [
+        {
+          "version": "0.1.0",
+          "publishTimestamp": 1794192900,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.1-rc.5"
+          }
+        }
+      ]
+    }
+  ]
+}
