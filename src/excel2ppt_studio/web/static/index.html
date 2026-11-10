@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Excel2PPT Studio</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">E2P</span>
+      <div>
+        <h1>Excel2PPT Studio</h1>
+        <p class="sub">克隆模板页 · 只换内容 · 零漂移</p>
+      </div>
+    </div>
+    <nav class="steps" id="steps">
+      <button class="step active" data-step="1"><b>1</b><span>选文件</span></button>
+      <button class="step" data-step="2"><b>2</b><span>认元素</span></button>
+      <button class="step" data-step="3"><b>3</b><span>预览</span></button>
+      <button class="step" data-step="4"><b>4</b><span>生成</span></button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="step1" class="panel">
+      <div class="card">
+        <h2>1 · 选择模板与 Excel</h2>
+        <p class="hint">模板建议单页 16:9；Excel 第一行必须是表头。也可以直接点「上传」从本机选文件。</p>
+
+        <div class="grid2">
+          <div class="field">
+            <label>模板 .pptx</label>
+            <div class="input-row">
+              <input id="templatePath" placeholder="C:\项目\模板.pptx" autocomplete="off">
+              <label class="btn ghost file-btn">上传<input type="file" id="templateFile" accept=".pptx" hidden></label>
+            </div>
+          </div>
+          <div class="field">
+            <label>Excel .xlsx</label>
+            <div class="input-row">
+              <input id="excelPath" placeholder="C:\项目\台账.xlsx" autocomplete="off">
+              <label class="btn ghost file-btn">上传<input type="file" id="excelFile" accept=".xlsx,.xlsm" hidden></label>
+            </div>
+          </div>
+          <div class="field">
+            <label>母版页（从 0 开始）</label>
+            <input id="slideIndex" type="number" value="0" min="0" step="1">
+          </div>
+          <div class="field">
+            <label>工作表（留空 = 第一个）</label>
+            <input id="sheet" placeholder="检查表" autocomplete="off">
+          </div>
+          <div class="field">
+            <label>表头行号</label>
+            <input id="headerRow" type="number" value="1" min="1" step="1">
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="btnScan" class="btn primary">读取模板与数据</button>
+          <span id="scanMsg" class="msg"></span>
+        </div>
+      </div>
+
+      <div class="card tips">
+        <h3>保真原则</h3>
+        <ul>
+          <li>输出页 = 模板页整页克隆，字体、颜色、位置、表格底纹不会被重写。</li>
+          <li>只替换文本节点；图片换字节但保留裁剪与边框。</li>
+          <li>文本超长默认<b>只告警不改</b>，避免破坏版式。</li>
+        </ul>
+      </div>
+
+      <div id="healthCard" class="card health-card" hidden>
+        <div class="health-head">
+          <h3>模板体检</h3>
+          <span id="healthScore" class="health-score"></span>
+        </div>
+        <div id="healthBar" class="health-bar"><i></i></div>
+        <ul id="healthIssues" class="health-issues"></ul>
+      </div>
+    </section>
+
+    <section id="step2" class="panel" hidden>
+      <div class="workspace">
+        <aside class="side">
+          <div class="side-head">
+            <h2>元素 <span id="fieldCount" class="pill">0</span></h2>
+            <div class="legend">
+              <span><i class="dot text"></i>文本</span>
+              <span><i class="dot table"></i>表格</span>
+              <span><i class="dot image"></i>图片</span>
+              <span><i class="dot chart"></i>图表</span>
+            </div>
+          </div>
+          <div id="fieldList" class="field-list"></div>
+        </aside>
+
+        <div class="canvas-wrap">
+          <div class="canvas-head">
+            <span id="canvasSize" class="muted"></span>
+            <span class="muted">只映射正文页；封面/结尾在下方单独配置</span>
+          </div>
+          <svg id="canvas" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"></svg>
+          <div class="data-preview">
+            <div class="preview-head">
+              <span>数据预览</span>
+              <span id="dataMeta" class="muted"></span>
+            </div>
+            <div id="dataTable" class="table-scroll"></div>
+          </div>
+        </div>
+
+        <aside class="side detail">
+          <h2>详情</h2>
+          <div id="detailBody" class="detail-body">
+            <p class="muted">尚未选中元素。</p>
+          </div>
+        </aside>
+      </div>
+      <div class="mapping-toolbar">
+        <button id="btnAutoMap" class="btn ghost">自动匹配</button>
+        <button id="btnTitles" class="btn ghost">AI 短标题</button>
+        <button id="btnExportProfile" class="btn ghost">导出 Profile</button>
+        <label class="btn ghost file-btn">导入 Profile<input type="file" id="importProfile" accept=".json" hidden></label>
+        <span class="muted">点画布元素或右侧详情，直接选列；已映射的元素显示 <code>→ 列名</code>。</span>
+        <span id="mapMsg" class="msg"></span>
+      </div>
+      <div class="layout-panel" id="layoutPanel">
+        <div class="layout-head">
+          <b>封面与结尾（可选）</b>
+          <span class="muted">只填文字即可，不需要在画布上映射</span>
+        </div>
+        <div class="layout-row">
+          <label class="chk"><input type="checkbox" id="coverEnabled"> 生成封面</label>
+          <label>模板页 <select id="coverSlide"></select></label>
+          <label>主标题 <input id="coverTitle" placeholder="如：2026 年工程质量问题汇报"></label>
+          <label>副标题 <input id="coverSubtitle" placeholder="可选"></label>
+        </div>
+        <div class="layout-row">
+          <label class="chk"><input type="checkbox" id="endEnabled"> 生成结尾</label>
+          <label>模板页 <select id="endSlide"></select></label>
+          <label>文字 <input id="endText" placeholder="如：谢谢观看"></label>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn ghost" data-goto="1">上一步</button>
+        <button id="btnToPreview" class="btn primary">下一步：预览</button>
+      </div>
+    </section>
+
+    <section id="step3" class="panel" hidden>
+      <div class="card">
+        <div class="preview-title-row">
+          <h2>3 · 预览</h2>
+          <div class="preview-tools">
+            <label class="inline">分页
+              <select id="pageMode">
+                <option value="one_per_row">每行一页</option>
+                <option value="n_per_page">每 N 行一页</option>
+              </select>
+            </label>
+            <label class="inline" id="pageSizeWrap" hidden>N
+              <input id="pageSize" type="number" value="5" min="1" max="50">
+            </label>
+            <button id="btnRefreshPreview" class="btn ghost">刷新预览</button>
+          </div>
+        </div>
+        <div class="preview-layout">
+          <aside class="preview-controls">
+            <div class="page-nav">
+              <button id="btnPrevPage" class="btn ghost icon" title="上一页">◀</button>
+              <span id="pageLabel">第 1 / 1 页</span>
+              <button id="btnNextPage" class="btn ghost icon" title="下一页">▶</button>
+            </div>
+            <div id="previewMeta" class="muted"></div>
+            <div id="previewWarnings" class="preview-warnings"></div>
+          </aside>
+          <div class="preview-stage">
+            <div id="previewLoading" class="preview-loading" hidden>正在用 WPS 渲染本页…</div>
+            <img id="previewImage" alt="预览" hidden>
+            <div id="previewFallback" class="preview-fallback" hidden></div>
+          </div>
+          <aside class="preview-summary">
+            <div class="sum-head">
+              <h3>映射摘要</h3>
+              <button id="btnEditMapping" class="btn ghost small">去修改</button>
+            </div>
+            <div id="mappingSummary"></div>
+          </aside>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn ghost" data-goto="2">上一步</button>
+        <button id="btnBuild" class="btn primary">生成 PPT</button>
+      </div>
+    </section>
+
+    <section id="step4" class="panel" hidden>
+      <div class="card">
+        <h2>4 · 生成结果</h2>
+        <div id="buildResult">
+          <p class="muted">尚未生成。</p>
+        </div>
+        <div class="actions">
+          <button class="btn ghost" data-goto="3">返回调整</button>
+          <button id="btnBuildAgain" class="btn primary">再生成一次</button>
+          <button id="btnVerify" class="btn ghost">校验零漂移</button>
+          <button id="btnPreview" class="btn ghost">预览第 1 页</button>
+        </div>
+        <div id="verifyBox"></div>
+        <div id="previewBox"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="canvasPopover" class="canvas-popover" hidden></div>
+
+  <div id="titlesModal" class="modal" hidden>
+    <div class="modal-card">
+      <h3>AI 生成短标题</h3>
+      <p class="hint">把问题描述压成 ≤16 字标题。生成后到标题槽位的下拉里选「AI 短标题」。</p>
+      <label class="modal-field">问题描述列
+        <select id="titleColumn"></select>
+      </label>
+      <label class="modal-field">序号列（用作键）
+        <select id="titleKey"></select>
+      </label>
+      <label class="modal-field">API Key
+        <input id="titleApiKey" type="password" placeholder="sk-...（留空则用服务端 DEEPSEEK_API_KEY）">
+      </label>
+      <div id="titleMsg" class="msg"></div>
+      <div id="titlePreview" class="title-preview"></div>
+      <div class="actions">
+        <button id="btnTitleCancel" class="btn ghost">关闭</button>
+        <button id="btnTitleRun" class="btn primary">生成</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="foot">
+    <span>本地运行，数据不出机。</span>
+    <span id="footStatus" class="muted"></span>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
