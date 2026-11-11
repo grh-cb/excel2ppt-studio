@@ -2,6 +2,8 @@
 
 > 把 Excel 台账按「单页 PPT 模板」逐行生成多页幻灯片——**克隆母版页，只换内容**，排版、颜色、字体、位置零漂移。
 
+![100 行台账生成 100 页 PPT](docs/assets/demo.gif)
+
 [![Python](https://img.shields.io/badge/python-3.10%2B-3776AB)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-pytest-informational)](tests/)
