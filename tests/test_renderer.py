@@ -576,3 +576,104 @@ def test_unused_template_pages_are_removed(tmp_path):
     assert len(prs2.slides) == 1
     texts = [s.text_frame.text for s in prs2.slides[0].shapes if s.has_text_frame]
     assert texts == ["项目A"], texts
+
+
+def test_table_unbound_columns_cleared(template_path, excel_path, tmp_path):
+    """表格列多于绑定列时，未绑定的列必须清空，不能保留模板样例文字。"""
+    from pptx import Presentation
+
+    from excel2ppt_studio.core.model import Binding, Profile
+    from excel2ppt_studio.core.renderer import render
+
+    profile = Profile(
+        template=template_path,
+        excel=excel_path,
+        sheet="检查表",
+        bindings=[
+            Binding(
+                "tbl-4",
+                "table",
+                {"mode": "rows", "columns": ["单位", "问题描述"]},
+                {"header": True},
+            )
+        ],
+    )
+    out = tmp_path / "tbl.pptx"
+    render(template_path, profile, out=str(out))
+
+    prs = Presentation(str(out))
+    table = next(s.table for s in prs.slides[0].shapes if getattr(s, "has_table", False))
+    third = table.cell(1, 2).text_frame.text
+    assert third.strip() == "", f"未绑定列应为空，实际={third!r}"
+
+
+def test_table_overflow_warns(template_path, excel_path, tmp_path):
+    """数据行超出表格框高度时必须告警，并给出建议行数。"""
+    from openpyxl import Workbook
+
+    from excel2ppt_studio.core.model import Binding, Profile
+    from excel2ppt_studio.core.renderer import render
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "检查表"
+    ws.append(["单位", "问题描述"])
+    for i in range(20):
+        ws.append([f"单位{i}", f"问题{i}"])
+    xlsx = tmp_path / "many.xlsx"
+    wb.save(str(xlsx))
+
+    profile = Profile(
+        template=template_path,
+        excel=str(xlsx),
+        sheet="检查表",
+        bindings=[
+            Binding(
+                "tbl-4",
+                "table",
+                {"mode": "rows", "columns": ["单位", "问题描述"]},
+                {"header": True},
+            )
+        ],
+        pagination={"mode": "n_per_page", "size": 20},
+    )
+    out = tmp_path / "overflow.pptx"
+    result = render(template_path, profile, out=str(out))
+    assert any("表格超出高度" in w for w in result.warnings), result.warnings
+
+
+def test_table_percent_format(template_path, tmp_path):
+    """列名含「率」且值为 0~1 的小数时，格式化为百分比。"""
+    from openpyxl import Workbook
+    from pptx import Presentation
+
+    from excel2ppt_studio.core.model import Binding, Profile
+    from excel2ppt_studio.core.renderer import render
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "检查表"
+    ws.append(["单位", "归档率"])
+    ws.append(["一公司", 0.9444444])
+    xlsx = tmp_path / "pct.xlsx"
+    wb.save(str(xlsx))
+
+    profile = Profile(
+        template=template_path,
+        excel=str(xlsx),
+        sheet="检查表",
+        bindings=[
+            Binding(
+                "tbl-4",
+                "table",
+                {"mode": "rows", "columns": ["单位", "归档率"]},
+                {"header": True},
+            )
+        ],
+    )
+    out = tmp_path / "pct_out.pptx"
+    render(template_path, profile, out=str(out))
+
+    prs = Presentation(str(out))
+    table = next(s.table for s in prs.slides[0].shapes if getattr(s, "has_table", False))
+    assert table.cell(1, 1).text_frame.text == "94.4%"
