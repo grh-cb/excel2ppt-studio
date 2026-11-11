@@ -289,7 +289,18 @@ def _set_cell_text(cell, value: str) -> None:
         paragraph.add_run().text = value
 
 
-def _apply_table(shape, rows: list[dict[str, Any]], binding: Binding) -> int:
+def _format_cell(column_name: str, value: Any) -> str:
+    """单元格格式化：列名含「率」且值为 0~1 的小数时转百分比。"""
+    if isinstance(value, float):
+        name = (column_name or "").lower()
+        if 0 <= value <= 1 and ("率" in name or "percent" in name):
+            return f"{value * 100:.1f}%"
+    return _to_text(value)
+
+
+def _apply_table(
+    shape, rows: list[dict[str, Any]], binding: Binding, warnings: list[str] | None = None
+) -> int:
     table = shape.table
     columns = list(binding.source.get("columns") or [])
     if not columns:
@@ -307,6 +318,9 @@ def _apply_table(shape, rows: list[dict[str, Any]], binding: Binding) -> int:
     if not trs:
         raise RenderError(f"表格 {binding.field_id} 没有任何行。")
 
+    template_rows = list(table.rows)
+    header_height = (template_rows[0].height or 0) if header else 0
+    row_height = template_rows[-1].height or 0
     template_row = copy.deepcopy(trs[-1])
     while len(tbl.tr_lst) > header_rows:
         tbl.remove(tbl.tr_lst[-1])
@@ -315,13 +329,34 @@ def _apply_table(shape, rows: list[dict[str, Any]], binding: Binding) -> int:
         for c_index, name in enumerate(binding.options["header_names"]):
             if c_index < len(table.columns):
                 _set_cell_text(table.cell(0, c_index), str(name))
+    # 未绑定的表头列也要清空，否则会残留模板里的示例标题
+    if header:
+        for c_index in range(len(columns), len(table.columns)):
+            _set_cell_text(table.cell(0, c_index), "")
 
     for row_data in rows:
         tr = copy.deepcopy(template_row)
         tbl.append(tr)
         r_index = len(tbl.tr_lst) - 1
         for c_index, col in enumerate(columns):
-            _set_cell_text(table.cell(r_index, c_index), _to_text(row_data.get(col)))
+            _set_cell_text(
+                table.cell(r_index, c_index), _format_cell(col, row_data.get(col))
+            )
+        # 模板列多于绑定列时，多出来的列必须清空，不能留模板样例文字
+        for c_index in range(len(columns), len(table.columns)):
+            _set_cell_text(table.cell(r_index, c_index), "")
+
+    if warnings is not None and row_height:
+        available = shape.height or 0
+        needed = header_height + len(rows) * row_height
+        if available and needed > available:
+            max_rows = max(1, int((available - header_height) / row_height))
+            msg = (
+                f"表格超出高度：{len(rows)} 行需要 {needed / 360000:.1f}cm，"
+                f"框高 {available / 360000:.1f}cm；建议每页 ≤ {max_rows} 行"
+            )
+            if msg not in warnings:
+                warnings.append(msg)
     return len(rows) * len(columns)
 
 
@@ -473,7 +508,7 @@ def _apply_bindings(
                 shape, field, value, binding.options, binding.source.get("slot")
             )
         elif binding.kind == "table":
-            replaced += _apply_table(shape, page_rows, binding)
+            replaced += _apply_table(shape, page_rows, binding, warnings)
         elif binding.kind == "chart":
             if len(page_rows) == 1 and not any("图表数据只有 1 个点" in w for w in warnings):
                 warnings.append(
